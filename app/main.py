@@ -49,6 +49,17 @@ def index():
     return HTMLResponse(html_path.read_text(encoding="utf-8"))
 
 
+@app.get("/launch-control", response_class=HTMLResponse)
+def launch_control():
+    """Serve the Launch Control-style local scenario dashboard.
+
+    This dashboard uses static demonstration fixtures only; it does not call
+    GitLab or block, approve, or deploy a real release.
+    """
+    html_path = STATIC_PATH / "launch-control.html"
+    return HTMLResponse(html_path.read_text(encoding="utf-8"))
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "model_type": "RandomForestClassifier", "data_type": _metadata.get("data_type", "unknown")}

@@ -36,3 +36,11 @@ def test_predict_has_expected_shape_and_notice():
 def test_invalid_feature_is_rejected():
     response = client.post("/predict", json={"changed_files": -1})
     assert response.status_code == 422
+
+
+def test_launch_control_dashboard_is_available_and_discloses_demo_scope():
+    response = client.get("/launch-control")
+    assert response.status_code == 200
+    assert "Launch Control" in response.text
+    assert "SIMULATED DEMO" in response.text
+    assert "No GitLab API is contacted" in response.text

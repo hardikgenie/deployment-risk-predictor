@@ -37,7 +37,7 @@ python scripts/train_demo_model.py
 uvicorn app.main:app --reload
 ```
 
-Open <http://127.0.0.1:8000>. API health check: <http://127.0.0.1:8000/health>. API docs: <http://127.0.0.1:8000/docs>.
+Open <http://127.0.0.1:8000> for the predictor dashboard, or <http://127.0.0.1:8000/launch-control> for a separate Launch Control-style release-decision dashboard. The Launch Control page is an interactive **local mock scenario UI** only: its merge requests, approvals, agent timeline, and decisions are fixtures; it does not connect to GitLab or execute a real release action. API health check: <http://127.0.0.1:8000/health>. API docs: <http://127.0.0.1:8000/docs>.
 
 The first page shows 11 pre-deployment signal inputs and returns a demo risk score, category, and heuristic review prompts. The page clearly labels the model as synthetic demo data.
 
