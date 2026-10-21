@@ -37,9 +37,17 @@ python scripts/train_demo_model.py
 uvicorn app.main:app --reload
 ```
 
-Open <http://127.0.0.1:8000> for the predictor dashboard, or <http://127.0.0.1:8000/launch-control> for a separate Launch Control-style release-decision dashboard. The Launch Control page is an interactive **local mock scenario UI** only: its merge requests, approvals, agent timeline, and decisions are fixtures; it does not connect to GitLab or execute a real release action. API health check: <http://127.0.0.1:8000/health>. API docs: <http://127.0.0.1:8000/docs>.
+Open <http://127.0.0.1:8000>. API health check: <http://127.0.0.1:8000/health>. API docs: <http://127.0.0.1:8000/docs>.
 
-The first page shows 11 pre-deployment signal inputs and returns a demo risk score, category, and heuristic review prompts. The page clearly labels the model as synthetic demo data.
+The first page shows 11 pre-deployment signal inputs and returns a demo risk score, category, and heuristic review prompts. The page clearly labels the model as synthetic demo data. It also includes a **CI pipeline evidence** panel; this panel displays the latest locally generated CI report or a GitHub Actions report imported through the UI.
+
+## Show GitHub Actions pipeline results in the dashboard
+
+After the enhanced `.github/workflows/ci.yml` workflow completes on a push or manual dispatch, the workflow publishes the generated `ci-risk-report.json` to the dedicated `ci-reports` branch. The local dashboard's **CI pipeline evidence** panel checks this public raw-JSON feed when you open or refresh the page; it then displays run metadata, changed files and line counts, tests, Ruff findings, pip-audit vulnerabilities, Docker build status, demo score, and measurement warnings. Pull-request runs do not publish to that branch.
+
+For the automatic feed to work, the repository must be public and the workflow needs `contents: write` permission to update the dedicated report branch. No separate repository secret is needed; the workflow uses the short-lived `GITHUB_TOKEN`. The `ci-reports` branch holds only the generated report JSON. If the feed is unavailable (for example, before the first successful report-publishing run, while offline, or for a private repository), you can use the UI's **Import workflow report JSON** control: download and unzip the `ci-risk-evidence` artifact from Actions, then select `artifacts/ci-risk-report.json`. Imported JSON is saved locally as `artifacts/dashboard_latest_ci_report.json` and ignored by Git.
+
+**Research integrity:** the model score remains based on synthetic demonstration data. CI stage outcomes and scan findings are actual pipeline evidence; the demo score is not a validated deployment-failure probability and must not be presented as dissertation findings.
 
 ## Run tests
 

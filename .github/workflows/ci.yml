@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # Write is needed only to publish the small public dashboard-report branch.
+  contents: write
 
 jobs:
   build-test-risk:
@@ -84,6 +85,29 @@ jobs:
             artifacts/pip-audit.json
           if-no-files-found: warn
           retention-days: 30
+
+      # Publish only the evidence JSON to a dedicated branch so the local UI can
+      # fetch the most recent public report without browser-side tokens. The CI
+      # workflow triggers only on main/master, so this branch push does not loop.
+      # Fork pull requests are intentionally excluded because their token is read-only.
+      - name: Publish latest report for the dashboard UI
+        if: always() && steps.risk.outcome == 'success' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          report_file="$GITHUB_WORKSPACE/artifacts/ci-risk-report.json"
+          test -s "$report_file"
+          temp_dir="$(mktemp -d)"
+          cp "$report_file" "$temp_dir/latest-ci-risk-report.json"
+          cd "$temp_dir"
+          git init -b ci-reports
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add latest-ci-risk-report.json
+          git commit -m "Update latest CI risk report [skip ci]"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPOSITORY}.git" HEAD:ci-reports
 
       # The model score is advisory only. The existing test/build controls remain authoritative.
       - name: Enforce existing mandatory CI checks

@@ -1,7 +1,13 @@
 .venv/
 __pycache__/
+.pytest_cache/
 *.py[cod]
 .env
 .DS_Store
-.pytest_cache/
-.coverage
+# Local CI evidence reports and imported Actions artifact (do not commit generated run data)
+artifacts/dashboard_latest_ci_report.json
+artifacts/ci-risk-report.json
+artifacts/ci-risk-report.md
+artifacts/pytest.xml
+artifacts/ruff-report.json
+artifacts/pip-audit.json

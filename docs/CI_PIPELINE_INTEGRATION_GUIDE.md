@@ -31,13 +31,15 @@ TEST_OUTCOME=success RUFF_OUTCOME=success SECURITY_OUTCOME=success DOCKER_OUTCOM
 
 For the local command above, set the environment variables to the **actual outcomes** of the commands you ran; do not write `success` if that command failed. If you skip Docker or a security scan, mark the relevant outcome `not_run`.
 
-## See the evidence after pushing
+## See the evidence in the dashboard after pushing
 
-1. Push this change to `main` (or open a pull request against `main`).
-2. Open the repository's **Actions** tab.
-3. Open the latest `CI - Deployment Risk Analysis` run.
-4. Read the job Summary for the evidence table and advisory output.
-5. Download the `ci-risk-evidence` artifact to inspect JSON, Markdown, JUnit, Ruff, and dependency-audit reports.
+1. Push this workflow update to `main` or run it through **Actions → Run workflow**.
+2. Open the repository's **Actions** tab and inspect the latest `CI - Deployment Risk Analysis` run, its job Summary and artifact.
+3. On a push to `main`/`master` or manual dispatch, the workflow publishes `latest-ci-risk-report.json` to the dedicated `ci-reports` branch. The local dashboard calls the public raw-JSON feed from its backend whenever you open or refresh **CI pipeline evidence**.
+4. The dashboard displays run metadata, change metrics, test outcomes, Ruff findings, dependency-audit findings, Docker build status, demo score, decision text, and measurement warnings.
+5. Fallback: download and unzip the `ci-risk-evidence` artifact, then use **Import workflow report JSON** on the dashboard and select `artifacts/ci-risk-report.json`.
+
+The report branch contains only the generated JSON evidence file. It does not contain source code. The workflow uses the built-in short-lived `GITHUB_TOKEN` with `contents: write` permission to update that branch; the browser receives no token. Pull-request runs do not publish, preventing untrusted fork PRs from attempting a write. For a private repository, use the fallback import or build a separately authenticated backend—do not put a GitHub token in client-side JavaScript.
 
 ## What is collected
 
