@@ -1,30 +1,108 @@
-name: CI - Deployment Risk Prototype
+name: CI - Deployment Risk Analysis
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [main, master]
   pull_request:
-    branches: ["main", "master"]
+    branches: [main, master]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  build-test-risk:
+    name: Build, validate, and assess release risk
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Check out source and history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Train synthetic demo model
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install project and analysis tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install 'ruff>=0.6,<1.0' 'pip-audit>=2.7,<3.0'
+          mkdir -p artifacts
+
+      - name: Train synthetic demo model (prototype plumbing only)
         run: python scripts/train_demo_model.py
-      - name: Run tests
-        run: pytest -q
-      - name: Build container image
-        run: docker build -t deployment-risk-predictor:ci .
+
+      - name: Run automated tests
+        id: tests
+        continue-on-error: true
+        run: pytest -q --junitxml=artifacts/pytest.xml
+
+      - name: Run Ruff static checks
+        id: quality
+        continue-on-error: true
+        run: ruff check app scripts tests --output-format=json > artifacts/ruff-report.json
+
+      - name: Audit Python dependencies
+        id: security
+        continue-on-error: true
+        run: pip-audit -r requirements.txt --format=json > artifacts/pip-audit.json
+
+      - name: Build Docker image
+        id: docker_build
+        continue-on-error: true
+        run: docker build -t deployment-risk-predictor:${GITHUB_SHA} .
+
+      - name: Generate CI risk evidence report
+        id: risk
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          RUFF_OUTCOME: ${{ steps.quality.outcome }}
+          SECURITY_OUTCOME: ${{ steps.security.outcome }}
+          DOCKER_OUTCOME: ${{ steps.docker_build.outcome }}
+        run: |
+          python scripts/ci_risk_assessment.py \
+            --junitxml artifacts/pytest.xml \
+            --ruff-report artifacts/ruff-report.json \
+            --audit-report artifacts/pip-audit.json \
+            --out-dir artifacts
+
+      - name: Upload CI risk evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-risk-evidence
+          path: |
+            artifacts/ci-risk-report.json
+            artifacts/ci-risk-report.md
+            artifacts/pytest.xml
+            artifacts/ruff-report.json
+            artifacts/pip-audit.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      # The model score is advisory only. The existing test/build controls remain authoritative.
+      - name: Enforce existing mandatory CI checks
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          DOCKER_OUTCOME: ${{ steps.docker_build.outcome }}
+        run: |
+          failed=0
+          if [ "$TEST_OUTCOME" != "success" ]; then
+            echo "Mandatory gate failed: tests outcome was $TEST_OUTCOME"
+            failed=1
+          fi
+          if [ "$DOCKER_OUTCOME" != "success" ]; then
+            echo "Mandatory gate failed: Docker build outcome was $DOCKER_OUTCOME"
+            failed=1
+          fi
+          if [ "$failed" -ne 0 ]; then
+            echo "The model score did not override the mandatory CI checks."
+            exit 1
+          fi
+          echo "Mandatory checks passed. The synthetic-model score remains advisory only."
