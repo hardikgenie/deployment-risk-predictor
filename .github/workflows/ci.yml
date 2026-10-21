@@ -1,0 +1,30 @@
+name: CI - Deployment Risk Prototype
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Train synthetic demo model
+        run: python scripts/train_demo_model.py
+      - name: Run tests
+        run: pytest -q
+      - name: Build container image
+        run: docker build -t deployment-risk-predictor:ci .
