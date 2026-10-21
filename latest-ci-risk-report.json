@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-21T21:25:14.315595+00:00",
+  "run": {
+    "repository": "hardikgenie/deployment-risk-predictor",
+    "workflow": "CI - Deployment Risk Analysis",
+    "run_id": "39678469132",
+    "run_attempt": 1,
+    "event": "push",
+    "ref": "refs/heads/main",
+    "commit_sha": "8133086dc17e9dda84fc3b29cf1178f33c15a533",
+    "run_url": "https://github.com/hardikgenie/deployment-risk-predictor/actions/runs/39678469132"
+  },
+  "pipeline": {
+    "tests": {
+      "report_available": true,
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "pass_rate_percent": 100.0,
+      "outcome": "success",
+      "workflow_outcome": "success"
+    },
+    "static_analysis": {
+      "tool": "Ruff",
+      "outcome": "failure",
+      "finding_count": 7,
+      "report_available": true
+    },
+    "dependency_security": {
+      "tool": "pip-audit",
+      "outcome": "failure",
+      "vulnerability_count": 2,
+      "report_available": true
+    },
+    "container_build": {
+      "outcome": "success"
+    }
+  },
+  "change_signals": {
+    "changed_files": 8,
+    "lines_added": 296,
+    "lines_deleted": 28,
+    "changed_paths_sample": [
+      ".github/workflows/ci.yml",
+      ".gitignore",
+      "README.md",
+      "app/main.py",
+      "docs/CI_PIPELINE_INTEGRATION_GUIDE.md",
+      "docs/DASHBOARD_CI_EVIDENCE_UI.md",
+      "static/index.html",
+      "tests/test_api.py"
+    ],
+    "diff_measured": true,
+    "config_change": true,
+    "dependency_change": false
+  },
+  "features_sent_to_demo_model": {
+    "changed_files": 8,
+    "lines_added": 296,
+    "lines_deleted": 28,
+    "test_failure_count": 0,
+    "test_pass_rate": 100.0,
+    "code_quality_issues": 7,
+    "security_findings": 2,
+    "pipeline_retries": 0,
+    "recent_deploy_failures": 0,
+    "config_change": 1,
+    "dependency_change": 0
+  },
+  "feature_sources_measured": {
+    "change_diff": true,
+    "test_junit": true,
+    "ruff_findings": true,
+    "dependency_audit": true,
+    "deployment_history": false
+  },
+  "model_output": {
+    "type": "RandomForestClassifier",
+    "training_data": "SYNTHETIC DEMO DATA ONLY",
+    "demo_score_percent": 28.6,
+    "demo_category": "LOW",
+    "validated_for_research": false
+  },
+  "decision": {
+    "advisory_status": "MANDATORY_CHECKS_PASSED_DEMO_SCORE_ADVISORY",
+    "explanation": "Tests and container build passed; the model score is synthetic and does not approve a production release.",
+    "production_deployment": "NOT_PERFORMED",
+    "risk_score_controls_mandatory_gates": false
+  },
+  "warnings": [
+    "SYNTHETIC MODEL: the score is a pipeline-integration demonstration, not a validated deployment-failure probability or dissertation result.",
+    "No deployment-history telemetry is connected; recent_deploy_failures is an unmeasured placeholder input.",
+    "The model score never overrides test or container-build gates. No production deployment is performed by this workflow.",
+    "At least one feature source is unavailable or unmeasured; inspect the measured-source flags before interpreting this run."
+  ]
+}
