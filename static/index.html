@@ -74,6 +74,80 @@ main{max-width:1260px;margin:28px auto;padding:0 24px}.intro{display:flex;justif
   </div>
 </section>
 
+<!-- REAL-DATA CI FAILURE RISK ANALYSIS -->
+<section class="panel ci-panel" id="real-data-panel">
+  <div class="panel-head">
+    <h3>Real-Data CI Failure Risk Analysis</h3>
+    <span>Historical-data-trained Random Forest</span>
+  </div>
+
+  <div class="ci-intro">
+    Predict CI execution failure risk using a model trained
+    on historical CI records. This model is separate from
+    the synthetic demonstration above.
+  </div>
+
+  <div style="padding:20px 22px">
+    <div class="ci-cards">
+      <div class="ci-card">
+        <div class="k">Predicted CI failure score</div>
+        <div class="v" id="real-score">—</div>
+        <div class="d">Research model output</div>
+      </div>
+
+      <div class="ci-card">
+        <div class="k">Risk category</div>
+        <div class="v" id="real-band">—</div>
+        <div class="d">Exploratory risk band</div>
+      </div>
+
+      <div class="ci-card">
+        <div class="k">Model</div>
+        <div class="v" id="real-model">—</div>
+        <div class="d">Historical CI data</div>
+      </div>
+
+      <div class="ci-card">
+        <div class="k">Prediction target</div>
+        <div class="v" id="real-target">—</div>
+        <div class="d">Not production deployment failure</div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px">
+      <label for="real-input"
+        style="font-size:12px;font-weight:700">
+        Pre-run feature inputs (JSON)
+      </label>
+
+      <textarea
+        id="real-input"
+        rows="8"
+        spellcheck="false"
+        style="width:100%;margin-top:8px;padding:12px;
+        border:1px solid #d8e1eb;border-radius:9px;
+        font-family:monospace;font-size:12px;
+        background:#fbfcfe"
+        placeholder='Paste the contents of example_input.json here'
+      ></textarea>
+    </div>
+
+    <div style="margin-top:14px">
+      <button
+        class="btn btn-primary"
+        id="real-predict-btn"
+        type="button">
+        Run Real-Data Prediction
+      </button>
+    </div>
+
+    <div class="ci-message" id="real-message"
+      style="margin:16px 0 0">
+      Paste your example_input.json and run the prediction.
+    </div>
+  </div>
+</section>
+
 <div class="statusbar"><span class="green-dot"></span><span>Local prediction API</span><span>•</span><span id="api-state">Checking service…</span><span>•</span><span>Human review remains in control</span></div>
 <footer>BITS Pilani WILP · M.Tech Software Engineering · Deployment Risk Analysis prototype</footer></main>
 <script>
@@ -113,4 +187,82 @@ async function ciRefresh(){try{const response=await fetch('/api/ci/latest');if(!
 document.getElementById('ci-refresh').addEventListener('click',ciRefresh);
 document.getElementById('ci-report-file').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;ciMessage.classList.remove('ci-hidden','error');ciMessage.textContent='Reading and importing report…';try{const parsed=JSON.parse(await file.text());const response=await fetch('/api/ci/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(parsed)});const result=await response.json();if(!response.ok)throw new Error(result.detail||'The file is not a recognised CI report.');await ciRefresh();}catch(error){ciMessage.classList.remove('ci-hidden');ciMessage.classList.add('error');ciMessage.textContent='Import failed: '+(error.message||'Check that you selected ci-risk-report.json from the downloaded artifact.');}finally{e.target.value='';}});
 ciRefresh();
+
+const realPredictButton =
+  document.getElementById('real-predict-btn');
+
+realPredictButton.addEventListener('click', async () => {
+  const message = document.getElementById('real-message');
+
+  let features;
+
+  try {
+    features = JSON.parse(
+      document.getElementById('real-input').value
+    );
+
+    if (
+      !features ||
+      typeof features !== 'object' ||
+      Array.isArray(features)
+    ) {
+      throw new Error('Input must be a JSON object.');
+    }
+  } catch (error) {
+    message.textContent =
+      'Invalid JSON input: ' + error.message;
+    message.classList.add('error');
+    return;
+  }
+
+  realPredictButton.disabled = true;
+  realPredictButton.textContent = 'Predicting…';
+  message.classList.remove('error');
+  message.textContent = 'Requesting real-data prediction…';
+
+  try {
+    const response = await fetch('/api/real-risk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(features)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        typeof result.detail === 'string'
+          ? result.detail
+          : JSON.stringify(result.detail)
+      );
+    }
+
+    document.getElementById('real-score').textContent =
+      result.risk_percent + '%';
+
+    document.getElementById('real-band').textContent =
+      result.risk_band;
+
+    document.getElementById('real-model').textContent =
+      result.model;
+
+    document.getElementById('real-target').textContent =
+      result.target;
+
+    message.textContent =
+      result.notice +
+      ' This prediction uses the submitted feature inputs.';
+
+  } catch (error) {
+    message.classList.add('error');
+    message.textContent =
+      'Prediction failed: ' + error.message;
+  } finally {
+    realPredictButton.disabled = false;
+    realPredictButton.textContent =
+      'Run Real-Data Prediction';
+  }
+});
 </script></body></html>

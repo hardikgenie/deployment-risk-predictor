@@ -1,0 +1,74 @@
+{
+  "audit": {
+    "total_rows": 303079,
+    "outcome_counts": {
+      "success": 137168,
+      "MISSING": 91047,
+      "skipped": 38041,
+      "passed": 17522,
+      "failure": 8671,
+      "cancelled": 5260,
+      "failed": 3702,
+      "errored": 1253,
+      "startup_failure": 271,
+      "canceled": 109,
+      "action_required": 35
+    },
+    "usable_rows_before_sampling": "at least 60000",
+    "sampled_rows": 60000,
+    "train_rows": 47849,
+    "test_rows": 12000,
+    "train_failure_rate": 0.08190348805617673,
+    "test_failure_rate": 0.04325,
+    "train_end": "2026-04-02 14:40:44+00:00",
+    "test_start": "2026-04-02 14:43:40+00:00",
+    "features": [
+      "additions",
+      "deletions",
+      "files_modified",
+      "msg_len",
+      "num_parents",
+      "time_since_last_commit",
+      "event",
+      "is_merge"
+    ],
+    "caveat": "Target is CI run failure, not production deployment failure. Historical dataset provenance and feature timing require verification."
+  },
+  "models": {
+    "logistic_regression": {
+      "precision": 0.08548345061245764,
+      "recall": 0.6319845857418112,
+      "f1": 0.15059687786960516,
+      "pr_auc": 0.09266207486212609,
+      "roc_auc": 0.7244937979964888,
+      "confusion_matrix": [
+        [
+          7972,
+          3509
+        ],
+        [
+          191,
+          328
+        ]
+      ]
+    },
+    "random_forest": {
+      "precision": 0.08956982911019445,
+      "recall": 0.2928709055876686,
+      "f1": 0.1371841155234657,
+      "pr_auc": 0.11174906719273123,
+      "roc_auc": 0.6844479083226891,
+      "confusion_matrix": [
+        [
+          9936,
+          1545
+        ],
+        [
+          367,
+          152
+        ]
+      ]
+    }
+  },
+  "selected_model": "random_forest"
+}
