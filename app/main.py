@@ -158,3 +158,88 @@ def import_ci_report(payload: CIReportImport):
     IMPORTED_CI_REPORT_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return {"available": True, "source": "imported_github_actions_artifact", "message": "CI report imported into the dashboard."}
 
+
+
+
+# ============================================================
+# REAL-DATA CI FAILURE RISK PREDICTION
+# ============================================================
+
+REAL_MODEL_PATH = (
+    ROOT / "research" / "real_data" / "results"
+    / "real_ci_failure_model.joblib"
+)
+
+_real_model_bundle = None
+
+
+def get_real_model():
+    global _real_model_bundle
+
+    if _real_model_bundle is None:
+        if not REAL_MODEL_PATH.is_file():
+            raise HTTPException(
+                status_code=503,
+                detail="Real-data trained model not found."
+            )
+
+        try:
+            _real_model_bundle = joblib.load(REAL_MODEL_PATH)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="Unable to load real-data model."
+            ) from exc
+
+    return _real_model_bundle
+
+
+@app.post("/api/real-risk")
+def predict_real_risk(payload: dict[str, Any]):
+    import pandas as pd
+
+    bundle = get_real_model()
+    features = bundle["features"]
+
+    missing = [
+        name for name in features
+        if name not in payload
+    ]
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"missing_features": missing}
+        )
+
+    try:
+        row = pd.DataFrame([payload])
+        probability = float(
+            bundle["pipeline"].predict_proba(
+                row[features]
+            )[0, 1]
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid feature values or types."
+        ) from exc
+
+    risk_band = (
+        "HIGH" if probability >= 0.67
+        else "MEDIUM" if probability >= 0.34
+        else "LOW"
+    )
+
+    return {
+        "ci_failure_risk_score": round(probability, 4),
+        "risk_percent": round(probability * 100, 2),
+        "risk_band": risk_band,
+        "target": bundle["target"],
+        "model": bundle["model_name"],
+        "data_source": "historical_ci_dataset",
+        "notice": (
+            "Research model: CI failure risk, not calibrated "
+            "deployment-failure probability."
+        )
+    }
